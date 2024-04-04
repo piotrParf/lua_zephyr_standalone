@@ -1,15 +1,13 @@
-#include <zephyr.h>
-#include <device.h>
-#include <sys/printk.h>
-#include <usb/usb_device.h>
-#include <storage/disk_access.h>
-#include <fs/fs.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/storage/disk_access.h>
+#include <zephyr/fs/fs.h>
 #include <ff.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <fsl_pwm.h>
 #include "lua/lauxlib.h"
 #include "lua/lua.h"
 #include "lua/lualib.h"
@@ -25,36 +23,10 @@ static struct fs_mount_t mp = {
     .mnt_point = "/SD:",
 };
 
-void main(void)
+int main(void)
 {
     if (usb_enable(NULL)) {
-        return;
-    }
-
-    // Manually setup the PWM
-    pwm_config_t pwmConfig;
-    PWM_GetDefaultConfig(&pwmConfig);
-
-    pwmConfig.reloadLogic = kPWM_ReloadPwmFullCycle;
-    pwmConfig.clockSource = kPWM_BusClock;
-    pwmConfig.enableDebugMode = true;
-
-    if (PWM_Init((void*)0x403E0000, 0, &pwmConfig) == kStatus_Fail) {
-        printk("[PWM] PWM Init Fail\n");
-    } else {
-        *(uint16_t*)0x403E002C = 0;
-        *(uint16_t*)0x403E008C = 0;
-        *(uint16_t*)0x403E00EC = 0;
-        *(uint16_t*)0x403E014C = 0;
-
-        pwm_signal_param_t pwmSignal;
-        pwmSignal.pwmChannel = kPWM_PwmA;
-        pwmSignal.level = kPWM_HighTrue;
-        pwmSignal.dutyCyclePercent = 75;
-        PWM_SetupPwm((void*)0x403E0000, kPWM_Module_0, &pwmSignal, 1, kPWM_EdgeAligned, 2500000, 250000000);
-
-        PWM_SetPwmLdok((void*)0x403E0000, kPWM_Control_Module_0, true);
-        PWM_StartTimer((void*)0x403E0000, kPWM_Control_Module_0);
+        return 0;
     }
 
     if (disk_access_init("USDHC_1") != 0) {
@@ -75,4 +47,6 @@ void main(void)
     fflush(stdout);
 
     printk("[INIT DONE]\n");
+
+    return 0;
 }

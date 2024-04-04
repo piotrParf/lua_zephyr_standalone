@@ -1,8 +1,7 @@
 
-#include <zephyr.h>
-#include <device.h>
-#include <shell/shell.h>
-#include <fs/fs.h>
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/fs/fs.h>
 #include <ff.h>
 
 #include "lua/lauxlib.h"

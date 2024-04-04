@@ -27,7 +27,7 @@
 #include "ltable.h"
 #include "ltm.h"
 
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
 
 

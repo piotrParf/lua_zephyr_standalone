@@ -9,7 +9,7 @@
 
 #include "lprefix.h"
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #include <setjmp.h>
 #include <stdlib.h>

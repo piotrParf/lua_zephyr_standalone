@@ -1,24 +1,18 @@
 #include <stdint.h>
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/eeprom.h>
-#include <drivers/flash.h>
-#include <drivers/uart.h>
-#include <drivers/pinmux.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/eeprom.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <zsl/matrices.h>
-#include <zsl/interp.h>
-#include "drivers/pwm.h"
-#include "fs/fs.h"
-#include "fs/fs_interface.h"
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_interface.h>
 #include "lua/lauxlib.h"
 #include "lua/lua.h"
-#include "storage/disk_access.h"
-#include "zsl/interp.h"
-#include "zsl/vectors.h"
-#include "zsl/zsl.h"
+#include <zephyr/storage/disk_access.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -404,7 +398,7 @@ static int lua_pwm_pin_set_cycles(lua_State * L) {
   int period = luaL_checkinteger(L, 3);
   int pulse = luaL_checkinteger(L, 4);
   pwm_flags_t flags = luaL_optinteger(L, 5, 0);
-  pwm_pin_set_cycles(dev->device, pwm, period, pulse, flags);
+  pwm_set_cycles(dev->device, pwm, period, pulse, flags);
   return 0;
 }
 
@@ -414,7 +408,7 @@ static int lua_pwm_pin_set_usec(lua_State * L) {
   int period = luaL_checkinteger(L, 3);
   int pulse = luaL_checkinteger(L, 4);
   pwm_flags_t flags = luaL_optinteger(L, 5, 0);
-  pwm_pin_set_usec(dev->device, pwm, period, pulse, flags);
+  pwm_set(dev->device, pwm, PWM_USEC(period), PWM_USEC(pulse), flags);
   return 0;
 }
 
@@ -424,7 +418,7 @@ static int lua_pwm_pin_set_nsec(lua_State * L) {
   int period = luaL_checkinteger(L, 3);
   int pulse = luaL_checkinteger(L, 4);
   pwm_flags_t flags = luaL_optinteger(L, 5, 0);
-  pwm_pin_set_nsec(dev->device, pwm, period, pulse, flags);
+  pwm_set(dev->device, pwm, period, pulse, flags);
   return 0;
 }
 
@@ -599,38 +593,38 @@ static int lua_gpio_pin_toggle(lua_State * L) {
 /// PINMUX ///
 //////////////
 
-static inline int lua_pinmux_pin_set(lua_State * L) {
-    UD_GET_DEVICE(1);
-    unsigned int pin = luaL_checkinteger(L, 2);
-    unsigned int func = luaL_checkinteger(L, 3);
-    lua_pushinteger(L, pinmux_pin_set(dev->device, pin, func));
-    return 1;
-}
+/* static inline int lua_pinmux_pin_set(lua_State * L) { */
+/*     UD_GET_DEVICE(1); */
+/*     unsigned int pin = luaL_checkinteger(L, 2); */
+/*     unsigned int func = luaL_checkinteger(L, 3); */
+/*     lua_pushinteger(L, pinmux_pin_set(dev->device, pin, func)); */
+/*     return 1; */
+/* } */
 
-static inline int lua_pinmux_pin_get(lua_State * L) {
-    UD_GET_DEVICE(1);
-    unsigned int pin = luaL_checkinteger(L, 2);
-    unsigned int func;
-    pinmux_pin_get(dev->device, pin, &func);
-    lua_pushinteger(L, func);
-    return 1;
-}
+/* static inline int lua_pinmux_pin_get(lua_State * L) { */
+/*     UD_GET_DEVICE(1); */
+/*     unsigned int pin = luaL_checkinteger(L, 2); */
+/*     unsigned int func; */
+/*     pinmux_pin_get(dev->device, pin, &func); */
+/*     lua_pushinteger(L, func); */
+/*     return 1; */
+/* } */
 
-static inline int lua_pinmux_pin_pullup(lua_State * L) {
-    UD_GET_DEVICE(1);
-    unsigned int pin = luaL_checkinteger(L, 2);
-    unsigned int func = luaL_checkinteger(L, 3);
-    lua_pushinteger(L, pinmux_pin_pullup(dev->device, pin, func));
-    return 1;
-}
+/* static inline int lua_pinmux_pin_pullup(lua_State * L) { */
+/*     UD_GET_DEVICE(1); */
+/*     unsigned int pin = luaL_checkinteger(L, 2); */
+/*     unsigned int func = luaL_checkinteger(L, 3); */
+/*     lua_pushinteger(L, pinmux_pin_pullup(dev->device, pin, func)); */
+/*     return 1; */
+/* } */
 
-static inline int lua_pinmux_pin_input_enable(lua_State * L) {
-    UD_GET_DEVICE(1);
-    unsigned int pin = luaL_checkinteger(L, 2);
-    unsigned int func = luaL_checkinteger(L, 3);
-    lua_pushinteger(L, pinmux_pin_input_enable(dev->device, pin, func));
-    return 1;
-}
+/* static inline int lua_pinmux_pin_input_enable(lua_State * L) { */
+/*     UD_GET_DEVICE(1); */
+/*     unsigned int pin = luaL_checkinteger(L, 2); */
+/*     unsigned int func = luaL_checkinteger(L, 3); */
+/*     lua_pushinteger(L, pinmux_pin_input_enable(dev->device, pin, func)); */
+/*     return 1; */
+/* } */
 
 
 ///////////
@@ -774,598 +768,6 @@ static int lua_uart_rx_disable(lua_State * L) {
     UD_GET_DEVICE(1);
     lua_pushinteger(L, uart_rx_disable(dev->device));
     return 1;
-}
-
-////////////////////////////
-/// ZSCILIB Bindings MTX ///
-////////////////////////////
-
-#define T_USERDATA_MTX 3
-#define UD_GET_MTX_NAMED(ix, named) ud_mtx_t * named = lua_touserdata(L, ix); \
-    luaL_argcheck(L, named->type == T_USERDATA_MTX, ix, "`matrix' expected");
-#define UD_GET_MTX(ix) UD_GET_MTX_NAMED(ix, mtx)
-typedef struct {
-    int type;
-    struct zsl_mtx mtx;
-} ud_mtx_t;
-
-static int lua_zsl_mtx_new(lua_State * L) {
-  int rows = luaL_checkinteger(L, 1);
-  int cols = luaL_checkinteger(L, 2);
-  zsl_real_t defVal = luaL_optnumber(L, 3, 0.0f);
-  ud_mtx_t* ptr = lua_newuserdata(L,
-                                  sizeof(int) + sizeof(struct zsl_mtx)
-                                  + sizeof(zsl_real_t) * rows * cols);
-  ptr->type = T_USERDATA_MTX;
-  struct zsl_mtx* mtx = &(ptr->mtx);
-  mtx->sz_rows = rows;
-  mtx->sz_cols = cols;
-  mtx->data = (zsl_real_t *)(mtx+1);
-  for(int i = 0; i < rows; i++) {
-    for(int j = 0; j < cols; j++) {
-      zsl_mtx_set(mtx, i, j, defVal);
-    }
-  }
-  return 1;
-}
-
-static int lua_zsl_mtx_from_buffer(lua_State * L) {
-  UD_GET_MTX(1);
-  UD_GET_BUFFER(2);
-  zsl_mtx_from_arr(&mtx->mtx, buf->ptr);
-  lua_pushlightuserdata(L, mtx);
-  return 1;
-}
-
-static int lua_zsl_mtx_copy(lua_State * L) {
-  UD_GET_MTX(1);
-  UD_GET_MTX_NAMED(1, src);
-  zsl_mtx_copy(&mtx->mtx, &src->mtx);
-  lua_pushlightuserdata(L, mtx);
-  return 1;
-}
-
-static int lua_zsl_mtx_get(lua_State * L) {
-  UD_GET_MTX(1);
-  int i = luaL_checkinteger(L, 2);
-  int j = luaL_checkinteger(L, 3);
-  zsl_real_t x;
-  zsl_mtx_get(&mtx->mtx, i, j, &x);
-  lua_pushnumber(L, x);
-  return 1;
-}
-
-static int lua_zsl_mtx_set(lua_State * L) {
-  UD_GET_MTX(1);
-  int i = luaL_checkinteger(L, 2);
-  int j = luaL_checkinteger(L, 3);
-  zsl_real_t x = luaL_checknumber(L, 4);
-  zsl_mtx_set(&mtx->mtx, i, j, x);
-  return 0;
-}
-
-static int lua_zsl_mtx_get_row(lua_State * L) {
-  UD_GET_MTX(1);
-  int i = luaL_checkinteger(L, 2);
-  UD_GET_BUFFER(3);
-  zsl_mtx_get_row(&mtx->mtx, i, buf->ptr);
-  lua_pushlightuserdata(L, buf);
-  return 1;
-}
-
-static int lua_zsl_mtx_set_row(lua_State * L) {
-  UD_GET_MTX(1);
-  int i = luaL_checkinteger(L, 2);
-  UD_GET_BUFFER(3);
-  zsl_mtx_set_row(&mtx->mtx, i, buf->ptr);
-  return 0;
-}
-
-static int lua_zsl_mtx_get_col(lua_State * L) {
-  UD_GET_MTX(1);
-  int j = luaL_checkinteger(L, 2);
-  UD_GET_BUFFER(3);
-  zsl_mtx_get_col(&mtx->mtx, j, buf->ptr);
-  lua_pushlightuserdata(L, buf);
-  return 1;
-}
-
-static int lua_zsl_mtx_set_col(lua_State * L) {
-  UD_GET_MTX(1);
-  int j = luaL_checkinteger(L, 2);
-  UD_GET_BUFFER(3);
-  zsl_mtx_set_col(&mtx->mtx, j, buf->ptr);
-  return 0;
-}
-
-static int lua_zsl_mtx_unary_op(lua_State * L) {
-  UD_GET_MTX(1);
-  int op = luaL_checkinteger(L, 2);
-  zsl_mtx_unary_op(&mtx->mtx, op);
-  return 0;
-}
-
-// TODO Mapping functions unary and binary
-
-static int lua_zsl_mtx_binary_op(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  UD_GET_MTX_NAMED(3, mc);
-  int op = luaL_checkinteger(L, 4);
-  zsl_mtx_binary_op(&ma->mtx, &mb->mtx, &mc->mtx, op);
-  lua_pushlightuserdata(L, mc);
-  return 1;
-}
-
-static int lua_zsl_mtx_add(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  UD_GET_MTX_NAMED(3, mc);
-  zsl_mtx_add(&ma->mtx, &mb->mtx, &mc->mtx);
-  lua_pushlightuserdata(L, mc);
-  return 1;
-}
-
-static int lua_zsl_mtx_add_d(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  zsl_mtx_add_d(&ma->mtx, &mb->mtx);
-  lua_pushlightuserdata(L, ma);
-  return 1;
-}
-
-static int lua_zsl_mtx_sum_rows_d(lua_State * L) {
-  UD_GET_MTX(1);
-  int i = luaL_checkinteger(L, 2);
-  int j = luaL_checkinteger(L, 3);
-  zsl_mtx_sum_rows_d(&mtx->mtx, i, j);
-  return 0;
-}
-
-static int lua_zsl_mtx_sum_rows_scaled_d(lua_State * L) {
-  UD_GET_MTX(1);
-  int i = luaL_checkinteger(L, 2);
-  int j = luaL_checkinteger(L, 3);
-  zsl_real_t scale = luaL_checknumber(L, 4);
-  zsl_mtx_sum_rows_scaled_d(&mtx->mtx, i, j, scale);
-  return 0;
-}
-
-static int lua_zsl_mtx_sub(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  UD_GET_MTX_NAMED(3, mc);
-  zsl_mtx_sub(&ma->mtx, &mb->mtx, &mc->mtx);
-  lua_pushlightuserdata(L, mc);
-  return 1;
-}
-
-static int lua_zsl_mtx_sub_d(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  zsl_mtx_sub_d(&ma->mtx, &mb->mtx);
-  lua_pushlightuserdata(L, ma);
-  return 1;
-}
-
-static int lua_zsl_mtx_mult(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  UD_GET_MTX_NAMED(3, mc);
-  zsl_mtx_mult(&ma->mtx, &mb->mtx, &mc->mtx);
-  lua_pushlightuserdata(L, mc);
-  return 1;
-}
-
-static int lua_zsl_mtx_mult_d(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  zsl_mtx_mult_d(&ma->mtx, &mb->mtx);
-  lua_pushlightuserdata(L, ma);
-  return 1;
-}
-
-static int lua_zsl_mtx_scalar_mult_d(lua_State * L) {
-  UD_GET_MTX(1);
-  zsl_real_t s = luaL_checknumber(L, 2);
-  zsl_mtx_scalar_mult_d(&mtx->mtx, s);
-  return 0;
-}
-
-static int lua_zsl_mtx_scalar_mult_row_d(lua_State * L) {
-  UD_GET_MTX(1);
-  int i = luaL_checkinteger(L, 2);
-  zsl_real_t s = luaL_checknumber(L, 3);
-  zsl_mtx_scalar_mult_row_d(&mtx->mtx, i, s);
-  return 0;
-}
-
-static int lua_zsl_mtx_trans(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  zsl_mtx_trans(&ma->mtx, &mb->mtx);
-  return 0;
-}
-
-static int lua_zsl_mtx_adjoin(lua_State * L) {
-  UD_GET_MTX_NAMED(1, m);
-  UD_GET_MTX_NAMED(2, ma);
-  if(m->mtx.sz_cols == 3 && m->mtx.sz_rows == 3) {
-    zsl_mtx_adjoint_3x3(&m->mtx, &ma->mtx);
-  } else {
-    zsl_mtx_adjoint(&m->mtx, &ma->mtx);
-  }
-  return 0;
-}
-
-static int lua_zsl_mtx_reduce(lua_State * L) {
-  UD_GET_MTX_NAMED(1, m);
-  UD_GET_MTX_NAMED(2, mr);
-  int i = luaL_checkinteger(L, 3);
-  int j = luaL_checkinteger(L, 4);
-  zsl_mtx_reduce(&m->mtx, &mr->mtx, i, j);
-  lua_pushlightuserdata(L, mr);
-  return 1;
-}
-
-static int lua_zsl_mtx_deter(lua_State * L) {
-  UD_GET_MTX(1);
-  zsl_real_t r;
-  if(mtx->mtx.sz_cols == 3 && mtx->mtx.sz_rows == 3) {
-    zsl_mtx_deter_3x3(&mtx->mtx, &r);
-  } else {
-    zsl_mtx_deter(&mtx->mtx, &r);
-  }
-  lua_pushnumber(L, r);
-  return 1;
-}
-
-static int lua_zsl_mtx_cols_norm(lua_State * L) {
-  UD_GET_MTX_NAMED(1, m);
-  UD_GET_MTX_NAMED(2, mnorm);
-  zsl_mtx_cols_norm(&m->mtx, &mnorm->mtx);
-  return 0;
-}
-
-static int lua_zsl_mtx_norm_elem(lua_State * L) {
-  UD_GET_MTX_NAMED(1, m);
-  UD_GET_MTX_NAMED(2, mnorm);
-  UD_GET_MTX_NAMED(3, mi);
-  int i = luaL_checkinteger(L, 4);
-  int j = luaL_checkinteger(L, 5);
-  zsl_mtx_norm_elem(&m->mtx, &mnorm->mtx, &mi->mtx, i, j);
-  return 0;
-}
-
-static int lua_zsl_mtx_inv(lua_State * L) {
-  UD_GET_MTX(1);
-  UD_GET_MTX_NAMED(2, mi);
-  if(mtx->mtx.sz_cols == 3 && mtx->mtx.sz_rows == 3) {
-    zsl_mtx_inv_3x3(&mtx->mtx, &mi->mtx);
-  } else {
-    zsl_mtx_inv(&mtx->mtx, &mi->mtx);
-  }
-  lua_pushlightuserdata(L, mi);
-  return 1;
-}
-
-static int lua_zsl_mtx_qrd(lua_State * L) {
-  UD_GET_MTX_NAMED(1, m);
-  UD_GET_MTX_NAMED(2, q);
-  UD_GET_MTX_NAMED(3, r);
-  int hessenberg = luaL_optinteger(L, 4, 0);
-  zsl_mtx_qrd(&m->mtx, &q->mtx, &r->mtx, hessenberg);
-  return 0;
-}
-
-static int lua_zsl_mtx_min(lua_State * L) {
-  UD_GET_MTX(1);
-  int i;
-  int j;
-  zsl_real_t x;
-  zsl_mtx_min_idx(&mtx->mtx, &i, &j);
-  zsl_mtx_get(&mtx->mtx, i, j, &x);
-  lua_pushnumber(L, x);
-  lua_pushinteger(L, i);
-  lua_pushinteger(L, j);
-  return 3;
-}
-
-static int lua_zsl_mtx_max(lua_State * L) {
-  UD_GET_MTX(1);
-  int i;
-  int j;
-  zsl_real_t x;
-  zsl_mtx_max_idx(&mtx->mtx, &i, &j);
-  zsl_mtx_get(&mtx->mtx, i, j, &x);
-  lua_pushnumber(L, x);
-  lua_pushinteger(L, i);
-  lua_pushinteger(L, j);
-  return 3;
-}
-
-static int lua_zsl_mtx_is_equal(lua_State * L) {
-  UD_GET_MTX_NAMED(1, ma);
-  UD_GET_MTX_NAMED(2, mb);
-  lua_pushboolean(L, zsl_mtx_is_equal(&ma->mtx, &mb->mtx));
-  return 1;
-}
-
-static int lua_zsl_mtx_is_notneg(lua_State * L) {
-  UD_GET_MTX_NAMED(1, m);
-  lua_pushboolean(L, zsl_mtx_is_notneg(&m->mtx));
-  return 1;
-}
-
-static int lua_zsl_mtx_is_sym(lua_State * L) {
-  UD_GET_MTX_NAMED(1, m);
-  lua_pushboolean(L, zsl_mtx_is_sym(&m->mtx));
-  return 1;
-}
-
-static int lua_zsl_mtx_print(lua_State * L) {
-  UD_GET_MTX_NAMED(1, m);
-  zsl_mtx_is_sym(&m->mtx);
-  return 0;
-}
-
-///////////////////////////////
-/// ZSCILIB Bindings interp ///
-///////////////////////////////
-
-static int lua_zsl_interp_lerp(lua_State * L) {
-  zsl_real_t v0 = luaL_checknumber(L, 1);
-  zsl_real_t v1 = luaL_checknumber(L, 2);
-  zsl_real_t t = luaL_checknumber(L, 3);
-  zsl_real_t v;
-  zsl_interp_lerp(v0, v1, t, &v);
-  lua_pushnumber(L, v);
-  return 1;
-}
-
-static int lua_zsl_interp_find_x(lua_State * L) {
-  UD_GET_BUFFER(1);
-  zsl_real_t x = luaL_checknumber(L, 2);
-  int idx;
-  size_t n = buf->size / sizeof(struct zsl_interp_xy);
-  zsl_interp_find_x(buf->ptr, n, x, &idx);
-  lua_pushinteger(L, idx);
-  return 1;
-}
-
-static int lua_zsl_interp_arr(lua_State * L) {
-  UD_GET_BUFFER(1);
-  zsl_real_t x = luaL_checknumber(L, 2);
-  int degree = luaL_checkinteger(L, 3);
-  size_t n = buf->size / sizeof(struct zsl_interp_xy);
-  zsl_real_t y;
-  switch (degree) {
-    case 0: zsl_interp_nn_arr(buf->ptr, n, x, &y); break;
-    case 1: zsl_interp_lin_y_arr(buf->ptr, n, x, &y); break;
-    default: break;
-  }
-  lua_pushnumber(L, y);
-  return 1;
-}
-
-////////////////////////////
-/// ZSCILIB Bindings VEC ///
-////////////////////////////
-
-#define T_USERDATA_VEC 4
-#define UD_GET_VEC_NAMED(ix, named) ud_vec_t * named = lua_touserdata(L, ix); \
-    luaL_argcheck(L, named->type == T_USERDATA_VEC, ix, "`matrix' expected");
-#define UD_GET_VEC(ix) UD_GET_VEC_NAMED(ix, vec)
-typedef struct {
-  int type;
-  struct zsl_vec vec;
-} ud_vec_t;
-
-static int lua_zsl_vec_new(lua_State * L) {
-  int size = luaL_checkinteger(L, 1);
-  ud_vec_t* ptr = lua_newuserdata(L, sizeof(ud_vec_t) + size * sizeof(zsl_real_t));
-  ptr->type = T_USERDATA_VEC;
-  struct zsl_vec* vec = &(ptr->vec);
-  vec->sz = size;
-  vec->data = (zsl_real_t *)(vec+1);
-  zsl_vec_init(vec);
-  return 1;
-}
-
-static int lua_zsl_vec_from_arr(lua_State * L) {
-  UD_GET_BUFFER(1);
-  buf->type = T_USERDATA_VEC;
-  buf->size = buf->size / sizeof(zsl_real_t);
-  lua_pushlightuserdata(L, buf);
-  return 1;
-}
-
-static int lua_zsl_arr_from_vec(lua_State * L) {
-  UD_GET_VEC(1);
-  vec->type = T_USERDATA_FAT;
-  vec->vec.sz = vec->vec.sz * sizeof(zsl_real_t);
-  lua_pushlightuserdata(L, vec);
-  return 1;
-}
-
-static int lua_zsl_vec_copy(lua_State * L) {
-  UD_GET_VEC_NAMED(1, vdest);
-  UD_GET_VEC_NAMED(2, vsrc);
-  zsl_vec_copy(&vdest->vec, &vsrc->vec);
-  lua_pushlightuserdata(L, vdest);
-  return 1;
-}
-
-static int lua_zsl_vec_get_subset(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  int offset = luaL_checkinteger(L, 2);
-  int len = luaL_checkinteger(L, 3);
-  UD_GET_VEC_NAMED(4, vsub);
-  zsl_vec_get_subset(&v->vec, offset, len, &vsub->vec);
-  lua_pushlightuserdata(L, vsub);
-  return 1;
-}
-
-static int lua_zsl_vec_add(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  UD_GET_VEC_NAMED(2, w);
-  UD_GET_VEC_NAMED(3, x);
-  zsl_vec_add(&v->vec, &w->vec, &x->vec);
-  lua_pushlightuserdata(L, x);
-  return 1;
-}
-
-static int lua_zsl_vec_sub(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  UD_GET_VEC_NAMED(2, w);
-  UD_GET_VEC_NAMED(3, x);
-  zsl_vec_sub(&v->vec, &w->vec, &x->vec);
-  lua_pushlightuserdata(L, x);
-  return 1;
-}
-
-static int lua_zsl_vec_neg(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  zsl_vec_neg(&v->vec);
-  lua_pushlightuserdata(L, v);
-  return 1;
-}
-
-// TODO zsl_vec_sum
-
-static int lua_zsl_vec_scalar_add(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  zsl_real_t s = luaL_checknumber(L, 2);
-  zsl_vec_scalar_add(&v->vec, s);
-  lua_pushlightuserdata(L, v);
-  return 1;
-}
-
-static int lua_zsl_vec_scalar_mult(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  zsl_real_t s = luaL_checknumber(L, 2);
-  zsl_vec_scalar_mult(&v->vec, s);
-  lua_pushlightuserdata(L, v);
-  return 1;
-}
-
-static int lua_zsl_vec_scalar_div(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  zsl_real_t s = luaL_checknumber(L, 2);
-  zsl_vec_scalar_div(&v->vec, s);
-  lua_pushlightuserdata(L, v);
-  return 1;
-}
-
-static int lua_zsl_vec_dist(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  UD_GET_VEC_NAMED(2, w);
-  lua_pushnumber(L, zsl_vec_dist(&v->vec, &w->vec));
-  return 1;
-}
-
-static int lua_zsl_vec_dot(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  UD_GET_VEC_NAMED(2, w);
-  zsl_real_t d;
-  zsl_vec_dot(&v->vec, &w->vec, &d);
-  lua_pushnumber(L, d);
-  return 1;
-}
-
-static int lua_zsl_vec_norm(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  lua_pushnumber(L, zsl_vec_norm(&v->vec));
-  return 1;
-}
-
-static int lua_zsl_vec_project(lua_State * L) {
-  UD_GET_VEC_NAMED(1, u);
-  UD_GET_VEC_NAMED(2, v);
-  UD_GET_VEC_NAMED(3, w);
-  zsl_vec_project(&u->vec, &v->vec, &w->vec);
-  lua_pushlightuserdata(L, w);
-  return 1;
-}
-
-static int lua_zsl_vec_to_unit(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  zsl_vec_to_unit(&v->vec);
-  lua_pushlightuserdata(L, v);
-  return 1;
-}
-
-static int lua_zsl_vec_cross(lua_State * L) {
-  UD_GET_VEC_NAMED(1, u);
-  UD_GET_VEC_NAMED(2, v);
-  UD_GET_VEC_NAMED(3, w);
-  zsl_vec_cross(&u->vec, &v->vec, &w->vec);
-  lua_pushlightuserdata(L, w);
-  return 1;
-}
-
-static int lua_zsl_vec_sum_of_sqrs(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  lua_pushnumber(L, zsl_vec_sum_of_sqrs(&v->vec));
-  return 1;
-}
-
-// TODO MEAN
-
-static int lua_zsl_vec_ar_mean(lua_State * L) {
-  UD_GET_VEC(1);
-  zsl_real_t m;
-  zsl_vec_ar_mean(&vec->vec, &m);
-  lua_pushnumber(L, m);
-  return 1;
-}
-
-static int lua_zsl_vec_rev(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  lua_pushnumber(L, zsl_vec_rev(&v->vec));
-  return 1;
-}
-
-static int lua_zsl_vec_zte(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  lua_pushnumber(L, zsl_vec_zte(&v->vec));
-  return 1;
-}
-
-static int lua_zsl_vec_is_equal(lua_State * L) {
-  UD_GET_VEC_NAMED(1, u);
-  UD_GET_VEC_NAMED(2, v);
-  zsl_real_t eps = luaL_checknumber(L, 3);
-  lua_pushboolean(L, zsl_vec_is_equal(&u->vec, &v->vec, eps));
-  return 1;
-}
-
-static int lua_zsl_vec_is_nonneg(lua_State * L) {
-  UD_GET_VEC_NAMED(1, u);
-  lua_pushboolean(L, zsl_vec_is_nonneg(&u->vec));
-  return 1;
-}
-
-static int lua_zsl_vec_contains(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  zsl_real_t val = luaL_checknumber(L, 2);
-  zsl_real_t eps = luaL_checknumber(L, 3);
-  lua_pushinteger(L, zsl_vec_contains(&v->vec, val, eps));
-  return 1;
-}
-
-static int lua_zsl_vec_sort(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  UD_GET_VEC_NAMED(2, w);
-  zsl_vec_sort(&v->vec, &w->vec);
-  lua_pushlightuserdata(L, w);
-  return 1;
-}
-
-static int lua_zsl_vec_print(lua_State * L) {
-  UD_GET_VEC_NAMED(1, v);
-  zsl_vec_print(&v->vec);
-  return 0;
 }
 
 //////////////////
@@ -1523,71 +925,6 @@ static const luaL_Reg zephyr_funcs[] = {
   {"uart_rx_enable", lua_uart_rx_enable},
   /* {"uart_rx_enable_u16", lua_uart_rx_enable_u16}, */
   {"uart_rx_disable", lua_uart_rx_disable},
-  // ZSL
-  {"mtx_new", lua_zsl_mtx_new},
-  {"mtx_from_buffer", lua_zsl_mtx_from_buffer},
-  {"mtx_copy", lua_zsl_mtx_copy},
-  {"mtx_get", lua_zsl_mtx_get},
-  {"mtx_set", lua_zsl_mtx_set},
-  {"mtx_get_row", lua_zsl_mtx_get_row},
-  {"mtx_set_col", lua_zsl_mtx_set_col},
-  {"mtx_get_col", lua_zsl_mtx_get_col},
-  {"mtx_set_row", lua_zsl_mtx_set_row},
-  {"mtx_unary_op", lua_zsl_mtx_unary_op},
-  {"mtx_binary_op", lua_zsl_mtx_binary_op},
-  {"mtx_add", lua_zsl_mtx_add},
-  {"mtx_add_d", lua_zsl_mtx_add_d},
-  {"mtx_sum_rows_d", lua_zsl_mtx_sum_rows_d},
-  {"mtx_sum_rows_scaled_d", lua_zsl_mtx_sum_rows_scaled_d},
-  {"mtx_sub", lua_zsl_mtx_sub},
-  {"mtx_sub_d", lua_zsl_mtx_sub_d},
-  {"mtx_mult", lua_zsl_mtx_mult},
-  {"mtx_mult_d", lua_zsl_mtx_mult_d},
-  {"mtx_scalar_mult_d", lua_zsl_mtx_scalar_mult_d},
-  {"mtx_scalar_mult_row_d", lua_zsl_mtx_scalar_mult_row_d},
-  {"mtx_trans", lua_zsl_mtx_trans},
-  {"mtx_adjoin", lua_zsl_mtx_adjoin},
-  {"mtx_deter", lua_zsl_mtx_deter},
-  {"mtx_reduce", lua_zsl_mtx_reduce},
-  {"mtx_cols_norm", lua_zsl_mtx_cols_norm},
-  {"mtx_norm_elem", lua_zsl_mtx_norm_elem},
-  {"mtx_inv", lua_zsl_mtx_inv},
-  {"mtx_qrd", lua_zsl_mtx_qrd},
-  {"mtx_min", lua_zsl_mtx_min},
-  {"mtx_max", lua_zsl_mtx_max},
-  {"mtx_is_equal", lua_zsl_mtx_is_equal},
-  {"mtx_is_notneg", lua_zsl_mtx_is_notneg},
-  {"mtx_is_sym", lua_zsl_mtx_is_sym},
-  {"mtx_print", lua_zsl_mtx_print},
-  {"interp_lerp", lua_zsl_interp_lerp},
-  {"interp_find_x", lua_zsl_interp_find_x},
-  {"interp_arr", lua_zsl_interp_arr},
-  {"vec_new", lua_zsl_vec_new},
-  {"vec_from_arr", lua_zsl_vec_from_arr},
-  {"arr_from_vec", lua_zsl_arr_from_vec},
-  {"vec_copy", lua_zsl_vec_copy},
-  {"vec_get_subset", lua_zsl_vec_get_subset},
-  {"vec_add", lua_zsl_vec_add},
-  {"vec_sub", lua_zsl_vec_sub},
-  {"vec_neg", lua_zsl_vec_neg},
-  {"vec_scalar_add", lua_zsl_vec_scalar_add},
-  {"vec_scalar_mult", lua_zsl_vec_scalar_mult},
-  {"vec_scalar_div", lua_zsl_vec_scalar_div},
-  {"vec_dist", lua_zsl_vec_dist},
-  {"vec_dot", lua_zsl_vec_dot},
-  {"vec_norm", lua_zsl_vec_norm},
-  {"vec_project", lua_zsl_vec_project},
-  {"vec_to_unit", lua_zsl_vec_to_unit},
-  {"vec_cross", lua_zsl_vec_cross},
-  {"vec_sum_of_sqrs", lua_zsl_vec_sum_of_sqrs},
-  {"vec_ar_mean", lua_zsl_vec_ar_mean},
-  {"vec_rev", lua_zsl_vec_rev},
-  {"vec_zte", lua_zsl_vec_zte},
-  {"vec_is_equal", lua_zsl_vec_is_equal},
-  {"vec_is_nonneg", lua_zsl_vec_is_nonneg},
-  {"vec_contains", lua_zsl_vec_contains},
-  {"vec_sort", lua_zsl_vec_sort},
-  {"vec_print", lua_zsl_vec_print},
   // TODO statistics
   // TODO colorimetry
   // TODO probability
